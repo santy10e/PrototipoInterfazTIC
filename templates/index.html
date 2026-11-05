@@ -3,242 +3,621 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Predicción de Noticias Falsas</title>
-    <!-- Bootstrap CSS -->
+    <meta name="description" content="News Intelligence: análisis automatizado de noticias políticas en español mediante un modelo de regresión logística.">
+    <meta name="theme-color" content="#F7F8FA">
+    <title>Análisis de noticias · News Intelligence</title>
+
+    <!-- Icono embebido (evita la petición a /favicon.ico) -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%233157D5'/%3E%3Cpath d='M9 11h14M9 16h8M9 21h5' stroke='%23fff' stroke-width='2.4' stroke-linecap='round'/%3E%3Ccircle cx='21' cy='20' r='3.4' fill='none' stroke='%23fff' stroke-width='2.2'/%3E%3Cpath d='m23.6 22.6 2.2 2.2' stroke='%23fff' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
+
+    <!-- Tipografía -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap (misma versión que el proyecto original) e iconografía -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <!-- Estilos personalizados -->
-    <style>
-        body {
-            background-color: #f1f3f4; /* Fondo gris claro */
-            font-family: 'Poppins', sans-serif;
-            color: #202124; /* Texto gris oscuro */
-        }
-        .navbar {
-            background-color: #2e7d32; /* Verde oscuro */
-        }
-        .navbar-brand {
-            color: white !important;
-            font-weight: bold;
-            font-size: 1.5rem;
-        }
-        .container {
-            margin-top: 50px;
-        }
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            background-color: white;
-        }
-        .card-header {
-            background-color: #2e7d32; /* Verde oscuro */
-            color: white;
-            font-size: 1.5rem;
-            font-weight: bold;
-            border-radius: 15px 15px 0 0;
-            text-align: center;
-        }
-        textarea {
-            resize: none;
-            border-radius: 10px;
-            border: 1px solid #ddd;
-            padding: 15px;
-            font-size: 1rem;
-            background-color: #f8f9fa; /* Fondo gris muy claro */
-        }
-        .btn-primary {
-            background-color: #2e7d32; /* Verde oscuro */
-            border: none;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border-radius: 10px;
-            transition: background-color 0.3s ease;
-        }
-        .btn-primary:hover {
-            background-color: #1b5e20; /* Verde más oscuro al pasar el mouse */
-        }
-        #result {
-            margin-top: 20px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            text-align: center;
-            animation: fadeIn 0.5s ease;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .result-image {
-            width: 100px;
-            height: 100px;
-            margin: 20px auto;
-            display: block;
-            animation: bounce 0.5s ease;
-        }
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        .footer {
-            margin-top: 50px;
-            text-align: center;
-            color: #5f6368; /* Gris medio */
-            font-size: 0.9rem;
-        }
-    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <!-- Sistema de diseño -->
+    <link href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
 </head>
 <body>
-    <!-- Barra de navegación -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">Predicción de Noticias Falsas</a>
-        </div>
-    </nav>
+    <a class="skip-link" href="#main">Saltar al contenido principal</a>
 
-    <!-- Contenedor principal -->
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header">
-                        ¿Es esta noticia falsa o verdadera?
-                    </div>
-                    <div class="card-body">
-                        <textarea id="text-input" class="form-control" placeholder="Ingresa una noticia aquí..." rows="5"></textarea>
-                        <button class="btn btn-primary w-100 mt-3" onclick="predictNews()">Predecir</button>
-                        <div id="result">
-                            <!-- Aquí se mostrará la imagen y el texto del resultado -->
-                        </div>
-                        <div class="mt-3">
-                            <label for="num-predictions">Número de predicciones a incluir en el informe:</label>
-                            <select id="num-predictions" class="form-control">
-                                <option value="5">5</option>
-                                <option value="10">10</option>
-                                <option value="15">15</option>
-                                <option value="20">20</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-secondary w-100 mt-3" onclick="showReportModal()">Ver Informe</button>
-                    </div>
-                </div>
+    <div class="app" id="app" data-sidebar="expanded">
+
+        <!-- ============ Navegación lateral ============ -->
+        <aside class="sidebar" id="sidebar" aria-label="Navegación principal">
+            <div class="sidebar__brand">
+                <a class="brand" href="#analizar" aria-label="News Intelligence, ir al analizador">
+                    <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+                        <rect width="32" height="32" rx="9" fill="currentColor"/>
+                        <path d="M9 11h14M9 16h8M9 21h5" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+                        <circle cx="21" cy="20" r="3.4" fill="none" stroke="#fff" stroke-width="2.2"/>
+                        <path d="m23.6 22.6 2.2 2.2" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+                    </svg>
+                    <span class="brand__text">
+                        <span class="brand__name">News Intelligence</span>
+                        <span class="brand__tagline">Sistema de análisis de noticias</span>
+                    </span>
+                </a>
+                <button class="icon-button sidebar__close" type="button" data-drawer-close aria-label="Cerrar menú">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                </button>
             </div>
+
+            <nav class="sidebar__nav" aria-label="Secciones">
+                <p class="sidebar__group">Análisis</p>
+                <ul class="side-list">
+                    <li>
+                        <a class="side-link" href="#analizar" data-view-link="analizar" data-tooltip="Analizador">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <span class="side-link__text">Analizador</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="side-link" href="#historial" data-view-link="historial" data-tooltip="Historial">
+                            <i class="bi bi-clock-history" aria-hidden="true"></i>
+                            <span class="side-link__text">Historial</span>
+                            <span class="side-link__count" data-history-count aria-label="registros">0</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="side-link" href="#informes" data-view-link="informes" data-tooltip="Informes">
+                            <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+                            <span class="side-link__text">Informes</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <p class="sidebar__group">Documentación</p>
+                <ul class="side-list">
+                    <li>
+                        <a class="side-link" href="#modelo" data-view-link="modelo" data-tooltip="Modelo">
+                            <i class="bi bi-cpu" aria-hidden="true"></i>
+                            <span class="side-link__text">Información del modelo</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="side-link" href="#proyecto" data-view-link="proyecto" data-tooltip="Proyecto">
+                            <i class="bi bi-journal-text" aria-hidden="true"></i>
+                            <span class="side-link__text">Información del proyecto</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar__footer">
+                <button class="side-link side-link--button" type="button" id="sidebar-collapse"
+                        aria-controls="sidebar" aria-expanded="true" data-tooltip="Expandir menú">
+                    <i class="bi bi-layout-sidebar" aria-hidden="true"></i>
+                    <span class="side-link__text">Contraer menú</span>
+                </button>
+            </div>
+        </aside>
+
+        <div class="drawer-backdrop" data-drawer-close hidden></div>
+
+        <div class="shell">
+            <!-- Barra superior (solo móvil) -->
+            <header class="topbar">
+                <button class="icon-button" type="button" id="drawer-open" aria-controls="sidebar" aria-expanded="false" aria-label="Abrir menú de navegación">
+                    <i class="bi bi-list" aria-hidden="true"></i>
+                </button>
+                <a class="brand brand--compact" href="#analizar">
+                    <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+                        <rect width="32" height="32" rx="9" fill="currentColor"/>
+                        <path d="M9 11h14M9 16h8M9 21h5" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+                        <circle cx="21" cy="20" r="3.4" fill="none" stroke="#fff" stroke-width="2.2"/>
+                        <path d="m23.6 22.6 2.2 2.2" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+                    </svg>
+                    <span class="brand__name">News Intelligence</span>
+                </a>
+                <span class="status-pill status-pill--dot-only" data-service-status="checking" title="Comprobando servicio…">
+                    <span class="status-pill__dot" aria-hidden="true"></span>
+                    <span class="visually-hidden" data-service-status-text>Comprobando servicio…</span>
+                </span>
+            </header>
+
+            <main class="content" id="main" tabindex="-1">
+
+                <!-- =================== VISTA: ANALIZADOR =================== -->
+                <section class="view" id="view-analizar" data-view="analizar" data-title="Análisis de noticias" aria-labelledby="title-analizar">
+                    <header class="page-header">
+                        <div class="page-header__text">
+                            <p class="eyebrow">Analizador</p>
+                            <h1 class="page-title" id="title-analizar" tabindex="-1">Análisis de noticias</h1>
+                            <p class="page-subtitle">Introduce el texto de una noticia política en español. El modelo de regresión logística la clasificará como posiblemente falsa o verdadera.</p>
+                        </div>
+                        <div class="page-header__actions">
+                            <span class="status-pill" data-service-status="checking">
+                                <span class="status-pill__dot" aria-hidden="true"></span>
+                                <span data-service-status-text>Comprobando servicio…</span>
+                            </span>
+                            <a class="button button--secondary" href="#historial">
+                                <i class="bi bi-clock-history" aria-hidden="true"></i>
+                                Historial
+                                <span class="button__count" data-history-count>0</span>
+                            </a>
+                        </div>
+                    </header>
+
+                    <div class="analyzer">
+                        <!-- Entrada de la noticia -->
+                        <form class="panel composer" id="analyze-form" novalidate>
+                            <div class="composer__head">
+                                <label class="field-label" for="news-text">Contenido de la noticia</label>
+                                <span class="field-hint" id="news-help">Pega el titular y el cuerpo de la noticia</span>
+                            </div>
+
+                            <textarea class="composer__input" id="news-text" name="text" rows="10" spellcheck="true"
+                                      aria-describedby="news-help news-error"
+                                      placeholder="Ejemplo: «El Gobierno anunció este lunes un nuevo paquete de medidas económicas que será debatido en la Asamblea Nacional durante las próximas semanas, según informaron fuentes oficiales…»"></textarea>
+
+                            <p class="field-error" id="news-error" hidden>
+                                <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+                                <span data-error-text></span>
+                            </p>
+
+                            <div class="composer__footer">
+                                <p class="composer__meta">
+                                    <span class="counter" id="char-count">0 caracteres · 0 palabras</span>
+                                    <span class="kbd-hint" aria-hidden="true"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> para analizar</span>
+                                </p>
+                                <div class="composer__actions">
+                                    <button class="button button--secondary" type="button" id="clear-btn" disabled>
+                                        <i class="bi bi-eraser" aria-hidden="true"></i>
+                                        <span>Limpiar</span>
+                                    </button>
+                                    <button class="button button--primary button--lg" type="submit" id="analyze-btn">
+                                        <span class="spinner" aria-hidden="true"></span>
+                                        <i class="bi bi-search" aria-hidden="true"></i>
+                                        <span data-label>Analizar noticia</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- Resultado -->
+                        <section class="panel result" id="result-panel" data-state="empty" aria-labelledby="result-heading" aria-busy="false">
+                            <h2 class="visually-hidden" id="result-heading">Resultado del análisis</h2>
+
+                            <!-- Estado: vacío -->
+                            <div class="result__state result__empty" data-state-view="empty">
+                                <div class="empty-icon" aria-hidden="true"><i class="bi bi-file-earmark-text"></i></div>
+                                <p class="result__empty-title">El resultado aparecerá aquí</p>
+                                <p class="result__empty-text">Cuando analices una noticia, verás aquí la clasificación del modelo.</p>
+                                <ol class="steps">
+                                    <li><span class="steps__n">1</span>Introduce o pega el texto</li>
+                                    <li><span class="steps__n">2</span>Pulsa «Analizar noticia»</li>
+                                    <li><span class="steps__n">3</span>Revisa la clasificación</li>
+                                </ol>
+                            </div>
+
+                            <!-- Estado: procesando -->
+                            <div class="result__state result__loading" data-state-view="loading" hidden>
+                                <div class="scanbar" aria-hidden="true"><span></span></div>
+                                <p class="result__loading-title">Analizando la noticia…</p>
+                                <p class="result__loading-text">Preprocesamiento del texto, vectorización TF-IDF y clasificación.</p>
+                                <div class="skeleton" aria-hidden="true">
+                                    <span style="width: 42%"></span>
+                                    <span style="width: 88%"></span>
+                                    <span style="width: 74%"></span>
+                                </div>
+                            </div>
+
+                            <!-- Estado: clasificación -->
+                            <div class="result__state result__outcome" data-state-view="outcome" hidden>
+                                <div class="verdict" id="verdict" data-verdict="falsa">
+                                    <div class="verdict__icon" aria-hidden="true"><i class="bi" id="verdict-icon"></i></div>
+                                    <div class="verdict__body">
+                                        <p class="verdict__label" id="verdict-label"></p>
+                                        <p class="verdict__title" id="verdict-title"></p>
+                                    </div>
+                                </div>
+                                <p class="verdict__desc" id="verdict-desc"></p>
+
+                                <figure class="analyzed">
+                                    <figcaption class="analyzed__caption">
+                                        <span>Texto analizado</span>
+                                        <span class="analyzed__meta" id="analyzed-meta"></span>
+                                    </figcaption>
+                                    <blockquote class="analyzed__text" id="analyzed-text"></blockquote>
+                                </figure>
+
+                                <details class="disclosure">
+                                    <summary>¿Cómo se obtiene este resultado?</summary>
+                                    <p>El texto se limpia, se tokeniza y se eliminan las palabras vacías (NLTK). Después se transforma con TF-IDF, se seleccionan y normalizan las características y el modelo de regresión logística estima una probabilidad. Si esa probabilidad supera <strong>0,70</strong>, la noticia se clasifica como falsa; en caso contrario, como verdadera.</p>
+                                    <p>El modelo no ofrece una explicación de qué partes del texto influyeron en la clasificación.</p>
+                                    <a class="link" href="#modelo">Ver la ficha técnica del modelo <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                                </details>
+
+                                <p class="disclaimer">
+                                    <i class="bi bi-info-circle" aria-hidden="true"></i>
+                                    <span>Este resultado corresponde a una predicción automatizada basada en un modelo de Machine Learning. No constituye una verificación factual definitiva.</span>
+                                </p>
+
+                                <div class="result__actions">
+                                    <button class="button button--secondary" type="button" data-action="new-analysis">
+                                        <i class="bi bi-plus-lg" aria-hidden="true"></i> Nuevo análisis
+                                    </button>
+                                    <a class="button button--ghost" href="#historial">
+                                        Ver en el historial <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Estado: el texto no se pudo procesar -->
+                            <div class="result__state result__notice" data-state-view="unprocessable" hidden>
+                                <div class="notice notice--neutral">
+                                    <div class="notice__icon" aria-hidden="true"><i class="bi bi-slash-circle"></i></div>
+                                    <div>
+                                        <p class="notice__title">No se pudo procesar la noticia</p>
+                                        <p class="notice__text">Tras eliminar números, signos y palabras vacías, el texto no conserva contenido que el modelo pueda analizar. Prueba con un texto más extenso o con el cuerpo completo de la noticia.</p>
+                                        <p class="notice__text notice__text--muted">Este intento no se ha registrado en el historial.</p>
+                                    </div>
+                                </div>
+                                <div class="result__actions">
+                                    <button class="button button--secondary" type="button" data-action="edit-text">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i> Editar el texto
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Estado: error de comunicación -->
+                            <div class="result__state result__notice" data-state-view="error" hidden>
+                                <div class="notice notice--error">
+                                    <div class="notice__icon" aria-hidden="true"><i class="bi bi-wifi-off"></i></div>
+                                    <div>
+                                        <p class="notice__title">No se pudo completar el análisis</p>
+                                        <p class="notice__text" id="result-error-text"></p>
+                                    </div>
+                                </div>
+                                <div class="result__actions">
+                                    <button class="button button--primary" type="button" data-action="retry">
+                                        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Reintentar
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Actividad del historial (datos reales del servidor) -->
+                    <section class="panel activity" aria-labelledby="activity-title">
+                        <div class="panel__header">
+                            <div>
+                                <h2 class="panel__title" id="activity-title">Actividad reciente</h2>
+                                <p class="panel__subtitle">Resumen del historial actual del servidor (máximo 20 registros).</p>
+                            </div>
+                            <a class="button button--ghost" href="#historial">Ver historial <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                        </div>
+                        <div class="activity__body">
+                            <dl class="stats">
+                                <div class="stat">
+                                    <dt>Registros</dt>
+                                    <dd><span data-stat="total">0</span><span class="stat__unit">/ 20</span></dd>
+                                </div>
+                                <div class="stat">
+                                    <dt><span class="dot dot--fake" aria-hidden="true"></span>Clasificadas como falsas</dt>
+                                    <dd data-stat="falsa">0</dd>
+                                </div>
+                                <div class="stat">
+                                    <dt><span class="dot dot--true" aria-hidden="true"></span>Clasificadas como verdaderas</dt>
+                                    <dd data-stat="verdadera">0</dd>
+                                </div>
+                            </dl>
+                            <div class="activity__list-wrap">
+                                <ul class="activity__list" id="recent-list" aria-label="Últimas predicciones"></ul>
+                                <p class="activity__empty" id="recent-empty">Todavía no hay predicciones registradas en esta sesión del servidor.</p>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
+                <!-- =================== VISTA: HISTORIAL =================== -->
+                <section class="view" id="view-historial" data-view="historial" data-title="Historial de predicciones" aria-labelledby="title-historial" hidden>
+                    <header class="page-header">
+                        <div class="page-header__text">
+                            <p class="eyebrow">Registros</p>
+                            <h1 class="page-title" id="title-historial" tabindex="-1">Historial de predicciones</h1>
+                            <p class="page-subtitle">Predicciones registradas por el servidor. Se conservan las 20 más recientes; al superar ese límite se descarta la más antigua.</p>
+                        </div>
+                        <div class="page-header__actions">
+                            <button class="button button--secondary" type="button" id="history-refresh">
+                                <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Actualizar
+                            </button>
+                        </div>
+                    </header>
+
+                    <section class="panel table-panel" aria-labelledby="history-table-title">
+                        <div class="panel__header panel__header--bordered">
+                            <div>
+                                <h2 class="panel__title" id="history-table-title" tabindex="-1">Últimos 20 registros</h2>
+                                <p class="panel__subtitle" id="history-caption">Ordenados del más reciente al más antiguo.</p>
+                            </div>
+                            <div class="capacity" aria-label="Capacidad del historial">
+                                <span class="capacity__text"><strong data-history-count>0</strong> de 20</span>
+                                <span class="capacity__bar" aria-hidden="true"><span id="capacity-fill"></span></span>
+                            </div>
+                        </div>
+
+                        <div class="table-loading" id="history-loading" hidden aria-hidden="true">
+                            <span></span><span></span><span></span>
+                        </div>
+
+                        <div class="empty-state" id="history-empty" hidden>
+                            <div class="empty-icon" aria-hidden="true"><i class="bi bi-inbox"></i></div>
+                            <p class="empty-state__title">Aún no hay predicciones</p>
+                            <p class="empty-state__text">Las noticias que analices aparecerán aquí con su fecha y su clasificación.</p>
+                            <a class="button button--primary" href="#analizar"><i class="bi bi-search" aria-hidden="true"></i> Analizar una noticia</a>
+                        </div>
+
+                        <div class="empty-state" id="history-error" hidden>
+                            <div class="empty-icon empty-icon--error" aria-hidden="true"><i class="bi bi-exclamation-triangle"></i></div>
+                            <p class="empty-state__title">No se pudo cargar el historial</p>
+                            <p class="empty-state__text" data-error-text></p>
+                            <button class="button button--secondary" type="button" data-action="history-retry"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Reintentar</button>
+                        </div>
+
+                        <div class="table-scroll" id="history-table-wrap" hidden>
+                            <table class="data-table" aria-describedby="history-caption">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="col-num">N.º</th>
+                                        <th scope="col" class="col-date">Fecha y hora</th>
+                                        <th scope="col" class="col-text">Noticia</th>
+                                        <th scope="col" class="col-result">Resultado</th>
+                                        <th scope="col" class="col-actions"><span class="visually-hidden">Acciones</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-body"></tbody>
+                            </table>
+                        </div>
+
+                        <p class="panel__footnote">
+                            <i class="bi bi-hdd" aria-hidden="true"></i>
+                            El historial se guarda en la memoria del servidor: es común a todos los usuarios y se vacía al reiniciar la aplicación.
+                        </p>
+                    </section>
+                </section>
+
+                <!-- =================== VISTA: INFORMES =================== -->
+                <section class="view" id="view-informes" data-view="informes" data-title="Informes PDF" aria-labelledby="title-informes" hidden>
+                    <header class="page-header">
+                        <div class="page-header__text">
+                            <p class="eyebrow">Informes</p>
+                            <h1 class="page-title" id="title-informes" tabindex="-1">Informes PDF</h1>
+                            <p class="page-subtitle">Genera un documento PDF con las predicciones del historial para archivarlas o compartirlas.</p>
+                        </div>
+                    </header>
+
+                    <div class="report-grid">
+                        <section class="panel report-config" aria-labelledby="report-config-title">
+                            <div class="panel__header">
+                                <div>
+                                    <h2 class="panel__title" id="report-config-title">Configurar informe</h2>
+                                    <p class="panel__subtitle">El servidor genera el documento con ReportLab.</p>
+                                </div>
+                            </div>
+
+                            <form id="report-form" novalidate>
+                                <fieldset class="segmented-field">
+                                    <legend class="field-label">Predicciones a incluir</legend>
+                                    <div class="segmented">
+                                        <label><input type="radio" name="num_predictions" value="5" checked><span>5</span></label>
+                                        <label><input type="radio" name="num_predictions" value="10"><span>10</span></label>
+                                        <label><input type="radio" name="num_predictions" value="15"><span>15</span></label>
+                                        <label><input type="radio" name="num_predictions" value="20"><span>20</span></label>
+                                    </div>
+                                </fieldset>
+
+                                <div class="report-summary">
+                                    <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+                                    <p id="report-summary-text">Se incluirán <strong>0</strong> predicciones.</p>
+                                </div>
+
+                                <button class="button button--primary button--lg button--block" type="submit" id="report-btn">
+                                    <span class="spinner" aria-hidden="true"></span>
+                                    <i class="bi bi-download" aria-hidden="true"></i>
+                                    <span data-label>Generar y descargar PDF</span>
+                                </button>
+
+                                <p class="form-status" id="report-status" role="status" aria-live="polite"></p>
+                            </form>
+
+                            <dl class="meta-list">
+                                <div><dt>Formato</dt><dd>PDF · tamaño carta</dd></div>
+                                <div><dt>Contenido</dt><dd>Primeras 6 palabras de cada noticia y su resultado</dd></div>
+                                <div><dt>Orden</dt><dd>Cronológico, desde el registro más antiguo del historial</dd></div>
+                                <div><dt>Archivo</dt><dd><code>informe_predicciones.pdf</code></dd></div>
+                            </dl>
+                        </section>
+
+                        <section class="panel report-preview" aria-labelledby="report-preview-title">
+                            <div class="panel__header panel__header--bordered">
+                                <div>
+                                    <h2 class="panel__title" id="report-preview-title">Contenido del informe</h2>
+                                    <p class="panel__subtitle">Registros que se incluirán en el PDF, tal como aparecerán en él.</p>
+                                </div>
+                            </div>
+                            <ol class="preview-list" id="report-preview-list"></ol>
+                            <div class="empty-state empty-state--compact" id="report-empty" hidden>
+                                <div class="empty-icon" aria-hidden="true"><i class="bi bi-file-earmark"></i></div>
+                                <p class="empty-state__title">No hay predicciones para el informe</p>
+                                <p class="empty-state__text">Analiza al menos una noticia para poder generar el PDF.</p>
+                                <a class="button button--secondary" href="#analizar">Ir al analizador</a>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <!-- =================== VISTA: MODELO =================== -->
+                <section class="view" id="view-modelo" data-view="modelo" data-title="Información del modelo" aria-labelledby="title-modelo" hidden>
+                    <header class="page-header">
+                        <div class="page-header__text">
+                            <p class="eyebrow">Documentación</p>
+                            <h1 class="page-title" id="title-modelo" tabindex="-1">Información del modelo</h1>
+                            <p class="page-subtitle">Ficha técnica del clasificador que utiliza la plataforma.</p>
+                        </div>
+                    </header>
+
+                    <div class="doc-grid">
+                        <section class="panel" aria-labelledby="spec-title">
+                            <div class="panel__header panel__header--bordered">
+                                <h2 class="panel__title" id="spec-title">Ficha técnica</h2>
+                            </div>
+                            <dl class="spec-sheet">
+                                <div><dt>Arquitectura</dt><dd>Regresión logística (una capa lineal con activación sigmoide)</dd></div>
+                                <div><dt>Framework</dt><dd>PyTorch</dd></div>
+                                <div><dt>Vectorización</dt><dd>TF-IDF (scikit-learn)</dd></div>
+                                <div><dt>Selección de características</dt><dd>SelectKBest (scikit-learn)</dd></div>
+                                <div><dt>Normalización</dt><dd>StandardScaler (scikit-learn)</dd></div>
+                                <div><dt>Procesamiento de texto</dt><dd>NLTK: tokenización y eliminación de palabras vacías en español</dd></div>
+                                <div><dt>Clasificación</dt><dd>Binaria: noticia falsa / noticia verdadera</dd></div>
+                                <div><dt>Idioma y ámbito</dt><dd>Noticias de política en español</dd></div>
+                                <div><dt>Artefactos</dt><dd><code>modelo_optimizado_sgd.pt</code>, <code>tfidf_vectorizer.pkl</code>, <code>selector.pkl</code>, <code>scaler.pkl</code> (Joblib)</dd></div>
+                            </dl>
+                        </section>
+
+                        <div class="doc-stack">
+                            <section class="panel" aria-labelledby="threshold-title">
+                                <div class="panel__header">
+                                    <div>
+                                        <h2 class="panel__title" id="threshold-title">Regla de decisión</h2>
+                                        <p class="panel__subtitle">Cómo se convierte la probabilidad estimada en una clase.</p>
+                                    </div>
+                                </div>
+                                <div class="threshold" role="img" aria-label="Escala de probabilidad de 0 a 1. Hasta 0,70 la noticia se clasifica como verdadera; por encima de 0,70, como falsa.">
+                                    <div class="threshold__bar">
+                                        <span class="threshold__seg threshold__seg--true">Verdadera</span>
+                                        <span class="threshold__seg threshold__seg--fake">Falsa</span>
+                                    </div>
+                                    <div class="threshold__scale" aria-hidden="true">
+                                        <span>0</span><span class="threshold__mark">0,70</span><span>1</span>
+                                    </div>
+                                </div>
+                                <p class="panel__text">El modelo produce una puntuación que se transforma con la función sigmoide. Si el resultado es <strong>mayor que 0,70</strong>, la noticia se clasifica como falsa.</p>
+                            </section>
+
+                            <section class="panel" aria-labelledby="scope-title">
+                                <div class="panel__header">
+                                    <h2 class="panel__title" id="scope-title">Alcance y limitaciones</h2>
+                                </div>
+                                <ul class="check-list">
+                                    <li><i class="bi bi-dot" aria-hidden="true"></i>La clasificación es una predicción estadística, no una verificación periodística.</li>
+                                    <li><i class="bi bi-dot" aria-hidden="true"></i>El modelo no indica qué palabras o frases determinaron el resultado.</li>
+                                    <li><i class="bi bi-dot" aria-hidden="true"></i>La interfaz no muestra un porcentaje de confianza porque el servidor no lo devuelve.</li>
+                                    <li><i class="bi bi-dot" aria-hidden="true"></i>Fue desarrollado para noticias de política en español; con otros temas o idiomas los resultados pueden no ser representativos.</li>
+                                </ul>
+                            </section>
+                        </div>
+                    </div>
+
+                    <section class="panel pipeline-panel" aria-labelledby="pipeline-title">
+                        <div class="panel__header">
+                            <div>
+                                <h2 class="panel__title" id="pipeline-title">Flujo de procesamiento</h2>
+                                <p class="panel__subtitle">Pasos que sigue cada noticia desde que se envía hasta que se clasifica.</p>
+                            </div>
+                        </div>
+                        <ol class="pipeline">
+                            <li><span class="pipeline__n">1</span><strong>Limpieza</strong><span>Minúsculas, sin signos ni números</span></li>
+                            <li><span class="pipeline__n">2</span><strong>Tokenización</strong><span>NLTK y eliminación de palabras vacías</span></li>
+                            <li><span class="pipeline__n">3</span><strong>TF-IDF</strong><span>Vectorización del texto</span></li>
+                            <li><span class="pipeline__n">4</span><strong>Selección</strong><span>SelectKBest</span></li>
+                            <li><span class="pipeline__n">5</span><strong>Normalización</strong><span>StandardScaler</span></li>
+                            <li><span class="pipeline__n">6</span><strong>Clasificación</strong><span>Regresión logística (PyTorch)</span></li>
+                        </ol>
+                    </section>
+                </section>
+
+                <!-- =================== VISTA: PROYECTO =================== -->
+                <section class="view" id="view-proyecto" data-view="proyecto" data-title="Información del proyecto" aria-labelledby="title-proyecto" hidden>
+                    <header class="page-header">
+                        <div class="page-header__text">
+                            <p class="eyebrow">Documentación</p>
+                            <h1 class="page-title" id="title-proyecto" tabindex="-1">Información del proyecto</h1>
+                            <p class="page-subtitle">Contexto académico y tecnologías de la plataforma.</p>
+                        </div>
+                    </header>
+
+                    <section class="panel research" aria-labelledby="research-title">
+                        <p class="eyebrow">Trabajo de investigación</p>
+                        <h2 class="research__title" id="research-title">Optimización de la Precisión en la Detección de Noticias Falsas de política en español mediante la Aplicación de Algoritmos de Optimización en la Regresión Logística</h2>
+                        <dl class="research__meta">
+                            <div><dt>Autor</dt><dd>Santiago Tene</dd></div>
+                            <div><dt>Tipo</dt><dd>Trabajo de Integración Curricular</dd></div>
+                            <div><dt>Ámbito</dt><dd>Detección de noticias falsas de política en español</dd></div>
+                        </dl>
+                    </section>
+
+                    <div class="doc-grid doc-grid--even">
+                        <section class="panel" aria-labelledby="features-title">
+                            <div class="panel__header">
+                                <h2 class="panel__title" id="features-title">Funcionalidades</h2>
+                            </div>
+                            <ul class="feature-list">
+                                <li><i class="bi bi-search" aria-hidden="true"></i><div><strong>Análisis en tiempo real</strong><span>Clasificación inmediata del texto introducido.</span></div></li>
+                                <li><i class="bi bi-diagram-2" aria-hidden="true"></i><div><strong>Clasificación binaria</strong><span>Noticia falsa o verdadera.</span></div></li>
+                                <li><i class="bi bi-clock-history" aria-hidden="true"></i><div><strong>Historial</strong><span>Últimas 20 predicciones registradas.</span></div></li>
+                                <li><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i><div><strong>Informes PDF</strong><span>Generación y descarga de informes.</span></div></li>
+                            </ul>
+                        </section>
+
+                        <section class="panel" aria-labelledby="stack-title">
+                            <div class="panel__header">
+                                <h2 class="panel__title" id="stack-title">Tecnologías</h2>
+                            </div>
+                            <dl class="stack-list">
+                                <div><dt>Backend</dt><dd><span class="chip">Flask</span></dd></div>
+                                <div><dt>Modelo</dt><dd><span class="chip">PyTorch</span></dd></div>
+                                <div><dt>Procesamiento</dt><dd><span class="chip">scikit-learn</span><span class="chip">NLTK</span><span class="chip">Joblib</span></dd></div>
+                                <div><dt>Informes</dt><dd><span class="chip">ReportLab</span></dd></div>
+                                <div><dt>Frontend</dt><dd><span class="chip">HTML5</span><span class="chip">CSS</span><span class="chip">JavaScript</span><span class="chip">Bootstrap</span></dd></div>
+                            </dl>
+                        </section>
+                    </div>
+                </section>
+            </main>
+
+            <footer class="app-footer">
+                <p>&copy; Trabajo de Integración Curricular · Santiago Tene</p>
+                <p>Las clasificaciones son predicciones automatizadas y no sustituyen la verificación periodística.</p>
+            </footer>
         </div>
     </div>
 
-    <!-- Modal para visualizar el informe -->
-    <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
+    <!-- Detalle de un registro del historial -->
+    <div class="modal fade" id="entry-modal" tabindex="-1" aria-labelledby="entry-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+            <div class="modal-content entry-modal">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="reportModalLabel">Informe de Predicciones</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div>
+                        <p class="eyebrow" id="entry-modal-meta"></p>
+                        <h2 class="modal-title" id="entry-modal-title">Detalle del registro</h2>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                <div class="modal-body" id="modal-report-content">
-                    <!-- Aquí se mostrará el contenido del informe -->
+                <div class="modal-body">
+                    <div id="entry-modal-result"></div>
+                    <p class="entry-modal__text" id="entry-modal-text"></p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="button" class="btn btn-primary" onclick="downloadReport()">Descargar PDF</button>
+                    <button type="button" class="button button--secondary" id="entry-copy">
+                        <i class="bi bi-clipboard" aria-hidden="true"></i> Copiar texto
+                    </button>
+                    <button type="button" class="button button--primary" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Pie de página -->
-    <footer class="footer">
-        <p>&copy; Trabajo de Integración Curricular - Santiago Tene.</p>
-    </footer>
+    <!-- Avisos y región de estado para lectores de pantalla -->
+    <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="false"></div>
+    <div class="visually-hidden" id="sr-announcer" role="status" aria-live="polite" aria-atomic="true"></div>
 
-    <!-- Bootstrap JS y dependencias -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
-
-    <!-- Script para manejar la predicción, el modal y la descarga del informe -->
-    <script>
-        // Función para truncar el texto a un máximo de 6 palabras
-        function truncateText(text, maxWords) {
-            const words = text.split(' ');
-            if (words.length > maxWords) {
-                return words.slice(0, maxWords).join(' ') + '...';
-            }
-            return text;
-        }
-
-        // Función para mostrar el modal con el informe
-        async function showReportModal() {
-            const numPredictions = document.getElementById('num-predictions').value;
-
-            // Obtener las predicciones del servidor
-            const response = await fetch(`/get_predictions?num_predictions=${numPredictions}`);
-            const data = await response.json();
-
-            // Construir el contenido del modal
-            let modalContent = '<ul>';
-            data.predictions.forEach((pred, index) => {
-                const truncatedText = truncateText(pred.text, 6);
-                modalContent += `
-                    <li>
-                        <strong>Predicción ${index + 1}:</strong><br>
-                        <strong>Noticia:</strong> ${truncatedText}<br>
-                        <strong>Resultado:</strong> ${pred.prediction}
-                    </li><br>
-                `;
-            });
-            modalContent += '</ul>';
-
-            // Mostrar el contenido en el modal
-            document.getElementById('modal-report-content').innerHTML = modalContent;
-
-            // Mostrar el modal
-            const reportModal = new bootstrap.Modal(document.getElementById('reportModal'));
-            reportModal.show();
-        }
-
-        // Función para descargar el informe en PDF
-        function downloadReport() {
-            const numPredictions = document.getElementById('num-predictions').value;
-            window.location.href = `/download_report?num_predictions=${numPredictions}`;
-        }
-
-        // Función para realizar la predicción
-        async function predictNews() {
-            const text = document.getElementById('text-input').value;
-            if (!text.trim()) {
-                alert('Por favor, ingresa una noticia.');
-                return;
-            }
-
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = '<p>Procesando...</p>';
-
-            const response = await fetch('/predict', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ text: text }),
-            });
-
-            const data = await response.json();
-            if (data.error) {
-                resultDiv.innerHTML = `<p>${data.error}</p>`;
-            } else {
-                const imageUrl = data.prediction === 'falsa' 
-                    ? 'https://cdn-icons-png.flaticon.com/512/564/564619.png'  // Ícono de advertencia
-                    : 'https://cdn-icons-png.flaticon.com/512/190/190411.png'; // Ícono de verificación
-                resultDiv.innerHTML = `
-                    <img src="${imageUrl}" class="result-image" alt="Resultado">
-                    <p style="color: ${data.prediction === 'falsa' ? '#d32f2f' : '#4caf50'}">
-                        La noticia es ${data.prediction}.
-                    </p>
-                `;
-
-                // Borrar el texto de la noticia
-                document.getElementById('text-input').value = '';
-            }
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

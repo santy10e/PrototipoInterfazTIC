@@ -10,6 +10,7 @@ import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from io import BytesIO
+from datetime import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
@@ -143,7 +144,9 @@ def predict():
     # Guardar en historial
     predictions_history.append({
         'text': text,
-        'prediction': prediction
+        'prediction': prediction,
+        # Fecha y hora del registro (solo informativa; no interviene en el modelo)
+        'timestamp': datetime.now().isoformat(timespec='seconds')
     })
 
     # Mantener solo las últimas 20 predicciones
